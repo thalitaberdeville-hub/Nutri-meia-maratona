@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080b13">
+<title>alento • pontos de nutrição</title>
+<style>
+  :root{
+    --bg:#080b13;
+    --bg-elev:#121927;
+    --bg-elev-2:#1a2338;
+    --border:#242f4a;
+    --text:#f2f5fa;
+    --text-dim:#8b93ab;
+    --text-faint:#5c6479;
+    --teal:#2fe0b3;
+    --teal-dim:rgba(47,224,179,0.14);
+    --coral:#ff5d3f;
+    --coral-dim:rgba(255,93,63,0.15);
+    --water:#4fb8f0;
+    --gel-a:#3ec56a;
+    --gel-b:#ef4a4a;
+    --isotonic:#f5a623;
+    --snack:#f0c419;
+    --r-lg:20px;
+    --r-md:14px;
+    --mono:ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  body{
+    padding-bottom:56px;
+    min-height:100vh;
+    padding-top:env(safe-area-inset-top);
+  }
+  button{font-family:inherit;}
+  ::selection{background:var(--teal-dim);}
+  :focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background:linear-gradient(180deg, var(--bg) 70%, rgba(8,11,19,0));
+    padding:18px 18px 10px;
+  }
+  .brand{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .brand h1{font-size:15px; font-weight:700; letter-spacing:0.02em; margin:0; color:var(--text);}
+  .brand span{font-size:12px; color:var(--text-faint);}
+
+  .dash{
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    border-radius:var(--r-lg);
+    padding:18px 20px;
+    display:flex; align-items:flex-end; justify-content:space-between; gap:10px;
+  }
+  .dash .distance-wrap{display:flex; align-items:baseline; gap:6px;}
+  .dash .distance{font-family:var(--mono); font-size:44px; font-weight:600; letter-spacing:-0.02em; line-height:1;}
+  .dash .distance-unit{font-family:var(--mono); font-size:16px; color:var(--text-dim);}
+  .dash .stats{display:flex; flex-direction:column; align-items:flex-end; gap:4px;}
+  .dash .stats .row{font-family:var(--mono); font-size:13px; color:var(--text-dim); white-space:nowrap;}
+  .dash .stats .row b{color:var(--text); font-weight:600;}
+
+  .gps-status{
+    display:flex; align-items:center; gap:6px;
+    font-size:11.5px; color:var(--text-faint); margin-top:10px; padding-left:2px;
+  }
+  .gps-dot{width:7px; height:7px; border-radius:50%; background:var(--text-faint); flex-shrink:0;}
+  .gps-dot.ok{background:var(--teal); box-shadow:0 0 0 3px var(--teal-dim);}
+  .gps-dot.warn{background:var(--isotonic); box-shadow:0 0 0 3px rgba(245,166,35,0.15);}
+  .gps-dot.bad{background:var(--gel-b); box-shadow:0 0 0 3px rgba(239,74,74,0.15);}
+
+  .controls{display:flex; gap:8px; margin-top:14px;}
+  .btn{
+    flex:1; border:none; border-radius:var(--r-md); padding:14px 10px;
+    font-size:15px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:transform .08s ease, opacity .15s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--coral); color:#1a0a05;}
+  .btn-secondary{background:var(--bg-elev-2); color:var(--text); border:1px solid var(--border);}
+  .btn-ghost{background:transparent; color:var(--text-dim); border:1px solid var(--border);}
+  .btn[disabled]{opacity:0.4; pointer-events:none;}
+  .btn-icon{
+    width:44px; flex:none; background:var(--bg-elev-2); color:var(--text-dim);
+    border:1px solid var(--border); border-radius:var(--r-md); font-size:16px;
+  }
+
+  /* ---------- alert banner ---------- */
+  .alert-banner{
+    position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top) + 10px);
+    z-index:50;
+    background:var(--coral); color:#1a0a05;
+    border-radius:var(--r-md);
+    padding:14px 16px;
+    display:flex; align-items:center; gap:12px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.45);
+    transform:translateY(-140%); opacity:0;
+    transition:transform .35s cubic-bezier(.2,.9,.3,1.3), opacity .25s ease;
+  }
+  .alert-banner.show{transform:translateY(0); opacity:1;}
+  .alert-banner .a-icon{font-size:26px; line-height:1;}
+  .alert-banner .a-text{flex:1;}
+  .alert-banner .a-eyebrow{font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.75;}
+  .alert-banner .a-label{font-size:16px; font-weight:700; margin-top:1px;}
+  .alert-banner .a-close{background:rgba(0,0,0,0.15); border:none; color:inherit; width:28px; height:28px; border-radius:50%; font-size:14px; cursor:pointer;}
+  .alert-banner.warn{background:var(--bg-elev-2); color:var(--text); border:1px solid var(--isotonic);}
+
+  /* ---------- course strip (signature element) ---------- */
+  .strip-section{padding:22px 18px 6px;}
+  .strip-label{font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint); margin-bottom:14px;}
+  .strip{position:relative; height:54px; margin:0 4px;}
+  .strip-line{
+    position:absolute; left:0; right:0; top:24px; height:3px;
+    background:var(--bg-elev-2); border-radius:3px; overflow:hidden;
+  }
+  .strip-fill{
+    position:absolute; left:0; top:0; bottom:0; width:0%;
+    background:linear-gradient(90deg, var(--teal), var(--teal));
+    transition:width .5s ease;
+  }
+  .strip-tick{
+    position:absolute; top:16px; width:2px; height:19px;
+    border-radius:2px; transform:translateX(-1px);
+  }
+  .strip-tick.finish{background:var(--text-faint); width:2px;}
+  .strip-runner{
+    position:absolute; top:1px; width:20px; height:20px; margin-left:-10px;
+    transition:left .5s ease;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px;
+  }
+  .strip-axis{position:relative; height:16px; margin:6px 4px 0;}
+  .strip-axis span{position:absolute; font-family:var(--mono); font-size:10px; color:var(--text-faint); transform:translateX(-50%);}
+
+  /* ---------- next checkpoint card ---------- */
+  .next-wrap{padding:16px 18px 4px;}
+  .next-card{
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    border-left:4px solid var(--teal);
+    border-radius:var(--r-lg);
+    padding:16px 18px;
+    display:flex; align-items:center; gap:14px;
+  }
+  .next-card.done{border-left-color:var(--text-faint); opacity:.7;}
+  .next-icon{
+    width:46px; height:46px; border-radius:14px; flex:none;
+    background:var(--bg-elev-2); display:flex; align-items:center; justify-content:center;
+    font-size:22px;
+  }
+  .next-body{flex:1; min-width:0;}
+  .next-eyebrow{font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--teal);}
+  .next-label{font-size:16px; font-weight:700; margin-top:2px;}
+  .next-meta{font-size:12.5px; color:var(--text-dim); margin-top:3px; font-family:var(--mono);}
+  .next-dist{text-align:right; flex:none;}
+  .next-dist b{font-family:var(--mono); font-size:20px; display:block;}
+  .next-dist span{font-size:10.5px; color:var(--text-faint);}
+
+  /* ---------- pre-race card ---------- */
+  .pre-card{
+    margin:16px 18px 4px;
+    background:var(--teal-dim);
+    border:1px solid rgba(47,224,179,0.35);
+    border-radius:var(--r-md);
+    padding:13px 15px;
+    font-size:13px; line-height:1.5; color:var(--text);
+  }
+  .pre-card b{color:var(--teal);}
+  .pre-card .pre-close{float:right; background:none; border:none; color:var(--text-dim); font-size:16px; cursor:pointer; margin-left:8px;}
+
+  /* ---------- checkpoint list ---------- */
+  .list-section{padding:22px 18px 10px;}
+  .list-label{font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint); margin-bottom:12px;}
+  .cp-row{
+    display:flex; align-items:center; gap:12px;
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    border-radius:var(--r-md);
+    padding:12px 14px;
+    margin-bottom:8px;
+    transition:opacity .3s ease;
+  }
+  .cp-row.done{opacity:.45;}
+  .cp-row.next{border-color:var(--teal); background:linear-gradient(90deg, var(--teal-dim), var(--bg-elev) 60%);}
+  .cp-icon{
+    width:36px; height:36px; border-radius:10px; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:17px;
+    background:var(--bg-elev-2);
+  }
+  .cp-km{font-family:var(--mono); font-size:13px; color:var(--text-dim); flex:none; width:44px;}
+  .cp-label{flex:1; font-size:13.5px; min-width:0;}
+  .cp-check{width:20px; height:20px; flex:none; border-radius:50%; border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--bg);}
+  .cp-row.done .cp-check{background:var(--teal); border-color:var(--teal);}
+
+  /* ---------- calibrate & settings ---------- */
+  .panel{
+    margin:8px 18px 0;
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    border-radius:var(--r-md);
+    overflow:hidden;
+  }
+  .panel summary{
+    padding:13px 15px; font-size:13px; font-weight:600; color:var(--text-dim);
+    cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel summary::-webkit-details-marker{display:none;}
+  .panel summary::after{content:'›'; transform:rotate(90deg); transition:transform .2s; color:var(--text-faint); font-size:18px;}
+  .panel[open] summary::after{transform:rotate(-90deg);}
+  .panel-body{padding:2px 15px 15px; font-size:12.5px; color:var(--text-dim); line-height:1.5;}
+  .cal-row{display:flex; gap:8px; margin-top:10px;}
+  .cal-row input{
+    flex:1; background:var(--bg-elev-2); border:1px solid var(--border); color:var(--text);
+    border-radius:10px; padding:10px 12px; font-family:var(--mono); font-size:14px; min-width:0;
+  }
+  .cal-row button{
+    background:var(--bg-elev-2); border:1px solid var(--border); color:var(--text);
+    border-radius:10px; padding:0 14px; font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .toggle-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0;}
+  .toggle-row:not(:last-child){border-bottom:1px solid var(--border);}
+  .switch{
+    width:42px; height:24px; border-radius:12px; background:var(--bg-elev-2); border:1px solid var(--border);
+    position:relative; cursor:pointer; flex:none;
+  }
+  .switch.on{background:var(--teal-dim); border-color:var(--teal);}
+  .switch::after{
+    content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%;
+    background:var(--text-faint); transition:left .2s ease, background .2s ease;
+  }
+  .switch.on::after{left:20px; background:var(--teal);}
+  .test-actions{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  .test-actions button{
+    background:var(--bg-elev-2); border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:7px 11px; font-size:12px; font-weight:600; cursor:pointer;
+  }
+
+  .foot-note{padding:20px 24px 10px; font-size:11.5px; color:var(--text-faint); text-align:center; line-height:1.6;}
+  .legend{display:flex; flex-wrap:wrap; gap:10px 14px; justify-content:center; padding:0 18px 4px; font-size:11px; color:var(--text-faint);}
+  .legend span{display:inline-flex; align-items:center; gap:5px;}
+</style>
+</head>
+<body>
+
+  <div class="alert-banner" id="alertBanner" role="status" aria-live="assertive">
+    <div class="a-icon" id="alertIcon">💧</div>
+    <div class="a-text">
+      <div class="a-eyebrow" id="alertEyebrow">Ponto de nutrição</div>
+      <div class="a-label" id="alertLabel">Água</div>
+    </div>
+    <button class="a-close" id="alertClose" aria-label="Fechar aviso">✕</button>
+  </div>
+
+  <div class="topbar">
+    <div class="brand">
+      <h1>alento · corrida</h1>
+      <span id="clockLabel">21,1 km</span>
+    </div>
+    <div class="dash">
+      <div class="distance-wrap">
+        <span class="distance" id="distanceVal">0,00</span>
+        <span class="distance-unit">km</span>
+      </div>
+      <div class="stats">
+        <div class="row">⏱ <b id="elapsedVal">00:00</b></div>
+        <div class="row">⚡ <b id="paceVal">—</b> /km</div>
+      </div>
+    </div>
+    <div class="gps-status">
+      <div class="gps-dot" id="gpsDot"></div>
+      <span id="gpsText">GPS parado — toque em Iniciar</span>
+    </div>
+    <div class="controls">
+      <button class="btn btn-primary" id="startBtn">▶ Iniciar</button>
+      <button class="btn btn-icon" id="soundBtn" title="Som" aria-label="Alternar som">🔔</button>
+      <button class="btn btn-icon" id="resetBtn" title="Reiniciar" aria-label="Reiniciar">↺</button>
+    </div>
+  </div>
+
+  <div class="pre-card" id="preCard">
+    <button class="pre-close" id="preClose" aria-label="Fechar">✕</button>
+    <b>10–15 min antes da largada:</b> gel sem cafeína + água. Isso é antes do cronômetro — não esqueça na fila.
+  </div>
+
+  <div class="strip-section">
+    <div class="strip-label">Percurso · 21,1 km</div>
+    <div class="strip">
+      <div class="strip-line"><div class="strip-fill" id="stripFill"></div></div>
+      <div id="stripTicks"></div>
+      <div class="strip-runner" id="stripRunner">🏃</div>
+    </div>
+    <div class="strip-axis">
+      <span style="left:0%">0</span>
+      <span style="left:23.7%">5</span>
+      <span style="left:47.4%">10</span>
+      <span style="left:71.1%">15</span>
+      <span style="left:94.8%">20</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span>💧 água</span><span>🟢 gel</span><span>🔴 gel c/ cafeína</span><span>⚡ isotônico</span><span>🍌 snack</span>
+  </div>
+
+  <div class="next-wrap">
+    <div class="next-card" id="nextCard">
+      <div class="next-icon" id="nextIcon">💧</div>
+      <div class="next-body">
+        <div class="next-eyebrow" id="nextEyebrow">Próximo ponto</div>
+        <div class="next-label" id="nextLabel">Água</div>
+        <div class="next-meta" id="nextMeta">km 3,3</div>
+      </div>
+      <div class="next-dist">
+        <b id="nextDistVal">3,30</b>
+        <span>km restantes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="list-section">
+    <div class="list-label">Todos os pontos</div>
+    <div id="cpList"></div>
+  </div>
+
+  <details class="panel">
+    <summary>Corrigir quilometragem</summary>
+    <div class="panel-body">
+      Se passar por uma placa oficial de km na prova, ajuste aqui para corrigir qualquer desvio do GPS.
+      <div class="cal-row">
+        <input type="number" id="calInput" inputmode="decimal" step="0.1" placeholder="ex: 12.3">
+        <button id="calBtn">Corrigir</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="panel">
+    <summary>Ajustes e teste</summary>
+    <div class="panel-body">
+      <div class="toggle-row">
+        <span>Avisar por voz</span>
+        <div class="switch on" id="voiceSwitch"></div>
+      </div>
+      <div class="toggle-row">
+        <span>Vibrar ao chegar no ponto</span>
+        <div class="switch on" id="vibrateSwitch"></div>
+      </div>
+      <div class="toggle-row">
+        <span>Modo teste (sem GPS)</span>
+        <div class="switch" id="testSwitch"></div>
+      </div>
+      <div class="test-actions" id="testActions" style="display:none">
+        <button data-add="0.1">+100 m</button>
+        <button data-add="0.5">+500 m</button>
+        <button data-add="1">+1 km</button>
+        <button data-add="-0.5">−500 m</button>
+      </div>
+    </div>
+  </details>
+
+  <div class="foot-note">
+    Distância estimada por GPS — pode variar um pouco em relação aos km oficiais da prova.<br>
+    Para funcionar durante a corrida, abra este arquivo direto no navegador (Safari/Chrome) e mantenha a tela acessível.
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  var CHECKPOINTS = [
+    {id:1, km:3.3,  label:'Água',                                   icon:'💧', color:'var(--water)',    warn:'Em breve: água'},
+    {id:2, km:6.3,  label:'Água + Gel 2',                            icon:'🟢', color:'var(--gel-a)',    warn:'Em breve: água e gel'},
+    {id:3, km:9.1,  label:'Snack — só se já tiver testado',          icon:'🍌', color:'var(--snack)',    warn:'Em breve: snack, se já testou'},
+    {id:4, km:9.3,  label:'Água',                                   icon:'💧', color:'var(--water)',    warn:'Em breve: água'},
+    {id:5, km:12.3, label:'Isotônico + Gel 3',                       icon:'⚡', color:'var(--isotonic)', warn:'Em breve: isotônico e gel'},
+    {id:6, km:13.1, label:'Água, se necessário',                     icon:'💧', color:'var(--water)',    warn:'Em breve: água, se precisar'},
+    {id:7, km:16.3, label:'Água',                                   icon:'💧', color:'var(--water)',    warn:'Em breve: água'},
+    {id:8, km:17.5, label:'Gel 4 com 100 mg de cafeína + água',      icon:'🔴', color:'var(--gel-b)',    warn:'Em breve: gel com cafeína e água'},
+    {id:9, km:19.3, label:'Água',                                   icon:'💧', color:'var(--water)',    warn:'Em breve: água'}
+  ];
+  var COURSE_KM = 21.1;
+  var WARN_BEFORE_KM = 0.3;
+  var ARRIVE_TOLERANCE_KM = 0.02;
+
+  var state = {
+    tracking:false,
+    watchId:null,
+    totalKm:0,
+    lastFix:null,
+    startTime:null,
+    elapsedTimer:null,
+    elapsedMs:0,
+    warned:{}, arrived:{},
+    voiceOn:true, vibrateOn:true, testOn:false,
+    audioCtx:null
+  };
+
+  // ---------- helpers ----------
+  function fmtKm(km, d){ d = d===undefined?2:d; return km.toFixed(d).replace('.', ','); }
+  function fmtClock(ms){
+    var totalSec = Math.floor(ms/1000);
+    var h = Math.floor(totalSec/3600);
+    var m = Math.floor((totalSec%3600)/60);
+    var s = totalSec%60;
+    var pad = function(n){return n<10?'0'+n:''+n;};
+    return h>0 ? (h+':'+pad(m)+':'+pad(s)) : (pad(m)+':'+pad(s));
+  }
+  function haversineMeters(lat1,lon1,lat2,lon2){
+    var R=6371000, toRad=function(d){return d*Math.PI/180;};
+    var dLat=toRad(lat2-lat1), dLon=toRad(lon2-lon1);
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  }
+
+  // ---------- DOM refs ----------
+  var $ = function(id){return document.getElementById(id);};
+  var distanceVal=$('distanceVal'), elapsedVal=$('elapsedVal'), paceVal=$('paceVal');
+  var gpsDot=$('gpsDot'), gpsText=$('gpsText');
+  var startBtn=$('startBtn'), soundBtn=$('soundBtn'), resetBtn=$('resetBtn');
+  var stripFill=$('stripFill'), stripTicks=$('stripTicks'), stripRunner=$('stripRunner');
+  var nextCard=$('nextCard'), nextIcon=$('nextIcon'), nextEyebrow=$('nextEyebrow'), nextLabel=$('nextLabel'), nextMeta=$('nextMeta'), nextDistVal=$('nextDistVal');
+  var cpList=$('cpList');
+  var alertBanner=$('alertBanner'), alertIcon=$('alertIcon'), alertEyebrow=$('alertEyebrow'), alertLabel=$('alertLabel'), alertClose=$('alertClose');
+  var preCard=$('preCard'), preClose=$('preClose');
+  var calInput=$('calInput'), calBtn=$('calBtn');
+  var voiceSwitch=$('voiceSwitch'), vibrateSwitch=$('vibrateSwitch'), testSwitch=$('testSwitch'), testActions=$('testActions');
+
+  // ---------- build strip ticks ----------
+  CHECKPOINTS.forEach(function(cp){
+    var t = document.createElement('div');
+    t.className = 'strip-tick';
+    t.style.left = (cp.km/COURSE_KM*100)+'%';
+    t.style.background = cp.color;
+    stripTicks.appendChild(t);
+  });
+  var finishTick = document.createElement('div');
+  finishTick.className = 'strip-tick finish';
+  finishTick.style.left = '99%';
+  stripTicks.appendChild(finishTick);
+
+  // ---------- build checkpoint list ----------
+  function buildList(){
+    cpList.innerHTML = '';
+    CHECKPOINTS.forEach(function(cp){
+      var row = document.createElement('div');
+      row.className = 'cp-row';
+      row.id = 'cp-row-'+cp.id;
+      row.innerHTML =
+        '<div class="cp-icon" style="background:'+colorDim(cp.color)+'">'+cp.icon+'</div>'+
+        '<div class="cp-km">'+fmtKm(cp.km,1)+'</div>'+
+        '<div class="cp-label">'+cp.label+'</div>'+
+        '<div class="cp-check">✓</div>';
+      cpList.appendChild(row);
+    });
+  }
+  function colorDim(c){ return 'color-mix(in srgb, '+c+' 22%, var(--bg-elev-2))'; }
+  buildList();
+
+  // ---------- render ----------
+  function render(){
+    distanceVal.textContent = fmtKm(state.totalKm,2);
+    elapsedVal.textContent = fmtClock(state.elapsedMs);
+    paceVal.textContent = (state.totalKm>0.05 && state.elapsedMs>0)
+      ? fmtClock(state.elapsedMs/state.totalKm)
+      : '—';
+
+    var pct = Math.max(0, Math.min(100, state.totalKm/COURSE_KM*100));
+    stripFill.style.width = pct+'%';
+    stripRunner.style.left = pct+'%';
+
+    var next = null;
+    for (var i=0;i<CHECKPOINTS.length;i++){
+      var cp = CHECKPOINTS[i];
+      var row = $('cp-row-'+cp.id);
+      var done = !!state.arrived[cp.id];
+      row.classList.toggle('done', done);
+      row.classList.toggle('next', !done && !next);
+      if (!done && !next) next = cp;
+    }
+
+    if (next){
+      nextCard.classList.remove('done');
+      nextIcon.textContent = next.icon;
+      nextIcon.style.background = colorDim(next.color);
+      nextEyebrow.textContent = 'Próximo ponto';
+      nextLabel.textContent = next.label;
+      nextMeta.textContent = 'km '+fmtKm(next.km,1);
+      var remain = Math.max(0, next.km - state.totalKm);
+      nextDistVal.textContent = remain<1 ? Math.round(remain*1000)+' m' : fmtKm(remain,2);
+      nextDistVal.nextElementSibling.textContent = remain<1 ? 'faltam' : 'km restantes';
+    } else {
+      nextCard.classList.add('done');
+      nextIcon.textContent = '🏁';
+      nextEyebrow.textContent = 'Percurso';
+      nextLabel.textContent = 'Todos os pontos concluídos';
+      nextMeta.textContent = 'Bom final de prova!';
+      nextDistVal.textContent = '—';
+      nextDistVal.nextElementSibling.textContent = '';
+    }
+  }
+
+  // ---------- alerts ----------
+  var bannerTimer=null;
+  function showBanner(icon,eyebrow,label,isWarn){
+    alertIcon.textContent = icon;
+    alertEyebrow.textContent = eyebrow;
+    alertLabel.textContent = label;
+    alertBanner.classList.toggle('warn', !!isWarn);
+    alertBanner.classList.add('show');
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(function(){ alertBanner.classList.remove('show'); }, isWarn?5000:7000);
+  }
+  alertClose.addEventListener('click', function(){ alertBanner.classList.remove('show'); clearTimeout(bannerTimer); });
+
+  function speak(text){
+    if (!state.voiceOn || !('speechSynthesis' in window)) return;
+    try{
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'pt-BR';
+      u.rate = 1;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  function beep(){
+    if (!state.audioCtx) return;
+    try{
+      var ctx = state.audioCtx;
+      [880,1180].forEach(function(freq,i){
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type='sine'; o.frequency.value=freq;
+        g.gain.value=0.0001;
+        o.connect(g); g.connect(ctx.destination);
+        var t0 = ctx.currentTime + i*0.16;
+        g.gain.exponentialRampToValueAtTime(0.18, t0+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0+0.15);
+        o.start(t0); o.stop(t0+0.16);
+      });
+    }catch(e){}
+  }
+  function vibrate(pattern){
+    if (state.vibrateOn && navigator.vibrate) { try{ navigator.vibrate(pattern); }catch(e){} }
+  }
+
+  function checkCheckpoints(){
+    CHECKPOINTS.forEach(function(cp){
+      if (state.arrived[cp.id]) return;
+      if (!state.warned[cp.id] && state.totalKm >= cp.km - WARN_BEFORE_KM){
+        state.warned[cp.id] = true;
+        showBanner(cp.icon, 'Chegando', cp.label, true);
+        speak(cp.warn);
+      }
+      if (state.totalKm >= cp.km - ARRIVE_TOLERANCE_KM){
+        state.arrived[cp.id] = true;
+        showBanner(cp.icon, 'Ponto de nutrição', cp.label, false);
+        speak('Ponto de nutrição agora: ' + cp.label);
+        beep();
+        vibrate([180,90,180]);
+      }
+    });
+  }
+
+  // ---------- geolocation ----------
+  function setGpsStatus(kind, text){
+    gpsDot.className = 'gps-dot' + (kind?(' '+kind):'');
+    gpsText.textContent = text;
+  }
+
+  function onPosition(pos){
+    var c = pos.coords;
+    var acc = c.accuracy;
+    if (acc != null){
+      if (acc <= 15) setGpsStatus('ok', 'Sinal bom (±'+Math.round(acc)+' m)');
+      else if (acc <= 35) setGpsStatus('warn', 'Sinal razoável (±'+Math.round(acc)+' m)');
+      else setGpsStatus('bad', 'Sinal fraco (±'+Math.round(acc)+' m)');
+    }
+    if (!state.tracking) return;
+
+    if (state.lastFix){
+      var segM = haversineMeters(state.lastFix.lat, state.lastFix.lon, c.latitude, c.longitude);
+      var dtS = (pos.timestamp - state.lastFix.t)/1000;
+      var speedMs = dtS>0 ? segM/dtS : 0;
+      var goodFix = acc==null || acc<=30;
+      var plausible = speedMs <= 8.5; // ~30 km/h cap
+      var notJitter = segM >= 1;
+      if (goodFix && plausible && notJitter){
+        state.totalKm += segM/1000;
+      }
+    }
+    state.lastFix = {lat:c.latitude, lon:c.longitude, t:pos.timestamp};
+    render();
+    checkCheckpoints();
+  }
+  function onPositionError(err){
+    if (err.code===1) setGpsStatus('bad','Localização negada — ative o GPS para este site');
+    else if (err.code===2) setGpsStatus('bad','Sem sinal de GPS no momento');
+    else setGpsStatus('warn','Aguardando sinal de GPS…');
+  }
+
+  function unlockAudio(){
+    if (!state.audioCtx){
+      try{ state.audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+    }
+  }
+
+  function startTracking(){
+    unlockAudio();
+    if (!state.tracking){
+      if (!navigator.geolocation){
+        setGpsStatus('bad','Este navegador não tem GPS disponível');
+        return;
+      }
+      state.tracking = true;
+      state.lastFix = null;
+      if (!state.startTime) state.startTime = Date.now() - state.elapsedMs;
+      state.elapsedTimer = setInterval(function(){
+        state.elapsedMs = Date.now() - state.startTime;
+        render();
+      }, 1000);
+      state.watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, {
+        enableHighAccuracy:true, maximumAge:1000, timeout:15000
+      });
+      setGpsStatus('warn','Procurando sinal de GPS…');
+      startBtn.innerHTML = '⏸ Pausar';
+      preCard.style.display = 'none';
+    } else {
+      state.tracking = false;
+      if (state.watchId!=null) navigator.geolocation.clearWatch(state.watchId);
+      clearInterval(state.elapsedTimer);
+      startBtn.innerHTML = '▶ Retomar';
+      setGpsStatus('', 'Pausado');
+    }
+  }
+
+  startBtn.addEventListener('click', startTracking);
+
+  soundBtn.addEventListener('click', function(){
+    state.voiceOn = !state.voiceOn;
+    voiceSwitch.classList.toggle('on', state.voiceOn);
+    soundBtn.style.opacity = state.voiceOn ? '1' : '0.4';
+    unlockAudio();
+  });
+
+  resetBtn.addEventListener('click', function(){
+    if (!confirm('Reiniciar toda a corrida (distância, tempo e pontos marcados)?')) return;
+    if (state.watchId!=null) navigator.geolocation.clearWatch(state.watchId);
+    clearInterval(state.elapsedTimer);
+    state.tracking=false; state.totalKm=0; state.lastFix=null; state.startTime=null;
+    state.elapsedMs=0; state.warned={}; state.arrived={};
+    startBtn.innerHTML = '▶ Iniciar';
+    setGpsStatus('', 'GPS parado — toque em Iniciar');
+    preCard.style.display = '';
+    render();
+  });
+
+  preClose.addEventListener('click', function(){ preCard.style.display='none'; });
+
+  calBtn.addEventListener('click', function(){
+    var v = parseFloat((calInput.value||'').replace(',','.'));
+    if (isNaN(v) || v<0 || v>COURSE_KM+2) { calInput.focus(); return; }
+    state.totalKm = v;
+    state.lastFix = null;
+    checkCheckpoints();
+    render();
+    calInput.value='';
+  });
+
+  voiceSwitch.addEventListener('click', function(){
+    state.voiceOn = !state.voiceOn;
+    voiceSwitch.classList.toggle('on', state.voiceOn);
+    unlockAudio();
+  });
+  vibrateSwitch.addEventListener('click', function(){
+    state.vibrateOn = !state.vibrateOn;
+    vibrateSwitch.classList.toggle('on', state.vibrateOn);
+  });
+  testSwitch.addEventListener('click', function(){
+    state.testOn = !state.testOn;
+    testSwitch.classList.toggle('on', state.testOn);
+    testActions.style.display = state.testOn ? 'flex' : 'none';
+  });
+  testActions.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-add]');
+    if (!btn) return;
+    unlockAudio();
+    var add = parseFloat(btn.getAttribute('data-add'));
+    state.totalKm = Math.max(0, state.totalKm + add);
+    if (!state.startTime){ state.startTime = Date.now(); state.elapsedMs = 1; }
+    checkCheckpoints();
+    render();
+  });
+
+  render();
+  setGpsStatus('', 'GPS parado — toque em Iniciar');
+})();
+</script>
+</body>
+</html>
